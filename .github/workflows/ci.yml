@@ -12,7 +12,7 @@ jobs:
       matrix:
         node: [22, 24]
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7.0.1
       - uses: actions/setup-node@v7
         with:
           node-version: ${{ matrix.node }}
@@ -25,7 +25,7 @@ jobs:
   action-smoke:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
       - name: Run Action on Node 22
@@ -72,7 +72,7 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7.0.1
       - uses: actions/setup-node@v7
         with:
           node-version: 22
@@ -83,7 +83,7 @@ jobs:
   mvp-packaging:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7.0.1
       - uses: actions/setup-node@v7
         with:
           node-version: 22
@@ -94,7 +94,7 @@ jobs:
   git-install-smoke:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
       - uses: actions/setup-node@v7
