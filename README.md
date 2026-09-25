@@ -20,26 +20,26 @@ AgentWarden 是面向 AI Agent Skill / Tool / MCP 配置的零运行时依赖安
 ## 🚀 快速开始
 
 需要 Node.js >= 22.6。无需先安装，可直接运行。以下示例固定到
-`agentwarden-cli@0.3.2`，避免首次运行受后续 `latest` 变化影响：
+`agentwarden-cli@0.3.3`，避免首次运行受后续 `latest` 变化影响：
 
 ```bash
 # 扫描 Skill 或目录
-npx --yes agentwarden-cli@0.3.2 scan ./skills
+npx --yes agentwarden-cli@0.3.3 scan ./skills
 
 # 使用 SHA-256 固定远程 Skill，再扫描、验签并写入 skills.lock
-npx --yes agentwarden-cli@0.3.2 install https://example.com/skills/weather.md \
+npx --yes agentwarden-cli@0.3.3 install https://example.com/skills/weather.md \
   --sha256 <64-char-sha256> \
   --signature https://example.com/skills/weather.md.sig \
   --public-key ./trusted-publisher.pem
 
 # 从 skills.lock 导出 CycloneDX 1.5 SBOM
-npx --yes agentwarden-cli@0.3.2 sbom --output agentwarden.cdx.json
+npx --yes agentwarden-cli@0.3.3 sbom --output agentwarden.cdx.json
 ```
 
 全局安装后可使用 `agentwarden`、`warden` 和兼容别名 `skillguard`：
 
 ```bash
-npm install --global agentwarden-cli@0.3.2
+npm install --global agentwarden-cli@0.3.3
 agentwarden scan ./skills
 warden verify .agentwarden/skills/weather.md
 ```
@@ -47,16 +47,16 @@ warden verify .agentwarden/skills/weather.md
 在新仓库中生成策略文件和 GitHub Actions 安全门禁：
 
 ```bash
-npx --yes agentwarden-cli@0.3.2 init
-npx --yes agentwarden-cli@0.3.2 init --profile strict
-npx --yes agentwarden-cli@0.3.2 init --force --no-workflow
-npx --yes agentwarden-cli@0.3.2 init --dry-run --json
-npx --yes agentwarden-cli@0.3.2 init --workflow-path .github/workflows/security.yml --action-ref juangh123/AgentWarden@v0
+npx --yes agentwarden-cli@0.3.3 init
+npx --yes agentwarden-cli@0.3.3 init --profile strict
+npx --yes agentwarden-cli@0.3.3 init --force --no-workflow
+npx --yes agentwarden-cli@0.3.3 init --dry-run --json
+npx --yes agentwarden-cli@0.3.3 init --workflow-path .github/workflows/security.yml --action-ref juangh123/AgentWarden@v0
 ```
 
-> `agentwarden-cli@0.3.2` 已发布到 npm。首个 bootstrap 版本未附带
-> provenance；GitHub Actions Trusted Publisher 已配置，后续 tag 版本将通过
-> OIDC 发布。生产流水线请固定版本或 commit SHA，不要长期依赖浮动的
+> `agentwarden-cli@0.3.3` 已发布到 npm，并通过 GitHub Actions Trusted
+> Publisher 生成 provenance。最初的 bootstrap 版本 `0.3.2` 未附带
+> provenance。生产流水线请固定版本或 commit SHA，不要长期依赖浮动的
 > `latest`。
 
 ### 30 秒演示
@@ -64,11 +64,11 @@ npx --yes agentwarden-cli@0.3.2 init --workflow-path .github/workflows/security.
 在任意空目录下载公开样例，无需先克隆仓库：
 
 ```bash
-curl -fsSLO https://raw.githubusercontent.com/juangh123/AgentWarden/v0.3.2/examples/safe-skill.md
-npx --yes agentwarden-cli@0.3.2 scan safe-skill.md  # exits 0
+curl -fsSLO https://raw.githubusercontent.com/juangh123/AgentWarden/v0.3.3/examples/safe-skill.md
+npx --yes agentwarden-cli@0.3.3 scan safe-skill.md  # exits 0
 
-curl -fsSLO https://raw.githubusercontent.com/juangh123/AgentWarden/v0.3.2/examples/malicious-skill.md
-npx --yes agentwarden-cli@0.3.2 scan malicious-skill.md  # exits 1
+curl -fsSLO https://raw.githubusercontent.com/juangh123/AgentWarden/v0.3.3/examples/malicious-skill.md
+npx --yes agentwarden-cli@0.3.3 scan malicious-skill.md  # exits 1
 ```
 
 恶意 Skill 会显示命中的凭证读取、命令执行、提示词注入和数据外带规则，并返回非零退出码，便于直接作为 CI 门禁。
@@ -80,7 +80,7 @@ npx --yes agentwarden-cli@0.3.2 scan malicious-skill.md  # exits 1
 
 ```yaml
 - uses: actions/checkout@v7
-- uses: juangh123/AgentWarden@v0.3.2
+- uses: juangh123/AgentWarden@v0.3.3
   with:
     path: skills/
     profile: strict
@@ -88,6 +88,8 @@ npx --yes agentwarden-cli@0.3.2 scan malicious-skill.md  # exits 1
 ```
 
 完整示例、Marketplace 入口与 SARIF 上传见 [GitHub Action 指南](docs/github-action.md)。
+可直接复制的下游仓库结构见
+[GitHub Action 接入示例](examples/github-action-project/README.md)。
 Action 直接从版本标签运行仓库源码，不需要先发布 npm 包。
 
 ---
@@ -115,6 +117,23 @@ Action 直接从版本标签运行仓库源码，不需要先发布 npm 包。
 - 🕶️ **默认安全报告**：JSON、SARIF 与终端输出自动隐藏密钥、认证头、私钥、敏感配置值和原始文件内容。
 - 🧩 **规则治理**：查看完整规则目录，并按规则覆盖有效严重级别，无需修改源码或直接关闭规则。
 - **一键接入**：`init` 生成可自动发现的策略文件和 GitHub Actions SARIF 门禁，无需手工拼接工作流。
+
+## 🧭 适用边界与相邻方案
+
+AgentWarden 是**静态门禁**，定位在“资产进入 Agent 之前”的那一步。它和以下方案解决的是不同问题，通常需要组合使用：
+
+| 相邻方案 | 它解决的问题 | AgentWarden 的位置 |
+| :--- | :--- | :--- |
+| 运行时沙箱 / 容器隔离（gVisor、容器、系统级 seatbelt 等） | 限制进程在运行时可访问的文件、网络与系统调用 | 不执行目标内容，只做静态读取；无法阻止运行时的越权行为 |
+| 运行时 MCP 代理 / 策略防火墙 | 在工具调用发生时按策略拦截或改写请求 | 不介入运行时流量，拦截点在提交与安装阶段 |
+| 依赖与包扫描（SCA、`npm audit` 等） | 识别 npm / PyPI 等生态依赖中的已知漏洞 | Skill 与 MCP 配置通常不在这些工具的覆盖范围内，两者可以同时接入 CI |
+| LLM 评审或人工 Review | 理解语义意图、判断业务合理性 | 输出确定性规则命中与退出码，适合作为必须通过的自动化门禁 |
+
+明确做不到的事：
+
+- 不执行、不模拟目标 Skill 或 MCP Server，因此无法发现只在运行时才出现的恶意行为。
+- 不承诺覆盖全部攻击面：静态规则会漏报新手法，也会对合法内容产生误报。
+- 不替代最小权限、网络出口限制、隔离运行、代码审查与人工判断。
 
 ## 📖 命令用法
 
@@ -504,12 +523,13 @@ agentwarden scan skills/ --severity-override SEC-CRED-003=medium
 | `SEC-EXFIL-001` | 网络安全 | CRITICAL | 异常数据外带或反弹连接尝试 |
 | `SEC-EXFIL-002` | 网络安全 | HIGH | 数据收集端点（webhook.site 等）或本地文件上传外带 |
 | `SEC-MCP-001` | MCP 配置 | CRITICAL | MCP Server 使用原始 shell、下载器或未固定版本包运行 |
-| `SEC-MCP-002` | MCP 配置 | HIGH | MCP 配置在 `env` 中硬编码明文密钥 |
+| `SEC-MCP-002` | MCP 配置 | HIGH | MCP 配置在 `env` 或 `headers` 中硬编码明文密钥 |
 | `SEC-MCP-003` | MCP 配置 | HIGH | MCP JSON 无法解析或缺少有效 Server 映射 |
+| `SEC-MCP-004` | MCP 配置 | HIGH | 远程 MCP 使用 HTTP、无效 URL 或 URL 内嵌凭据 |
 | `SEC-SUPPLY-001` | 供应链 | HIGH | 未校验哈希便下载并执行远程脚本 |
 | `SEC-SUPPLY-002` | 供应链 | MEDIUM | 指向仿冒官方仓库或下载源的相似域名 |
 
-目录扫描会跳过 `node_modules`、`dist`、`.git` 等构建/版本目录；除已列入白名单的 `.cursor`、`.vscode`、`.claude`、`.codex` 外，不会深入隐藏目录。`include` / `exclude` 只作用于目录发现，显式传入的文件无论扩展名或路径过滤规则如何都会被扫描。
+目录扫描会跳过 `node_modules`、`dist`、`.git` 等构建/版本目录；对已列入白名单的客户端目录（包括 `.cursor`、`.vscode`、`.claude`、`.codex`、`.cline`、`.roo`、`.continue`、`.zed`、`.copilot`、`.codeium`、`.devcontainer`）不会跳过，其余隐藏目录不会深入。MCP JSON 支持 `mcpServers`、`servers`、`mcp.servers`、`context_servers`、Claude Code 的 `projects.*.mcpServers` 以及 Dev Container 的 `customizations.vscode.mcp.servers` 结构。`include` / `exclude` 只作用于目录发现，显式传入的文件无论扩展名或路径过滤规则如何都会被扫描。
 
 `audit` 同时执行两层检查：锁文件 SHA-256 完整性，以及按当前配置重新扫描后的安全策略。即使用 `install --force` 锁定了高风险技能，只要内容未改但策略检查失败，`audit` 仍会返回退出码 `1`。
 
@@ -569,7 +589,7 @@ agentwarden scan skills/ --baseline .agentwarden-baseline.json
 
 ```yaml
 - name: AgentWarden Scan
-  run: npx --yes agentwarden-cli@0.3.2 scan skills/ --sarif > agentwarden.sarif
+  run: npx --yes agentwarden-cli@0.3.3 scan skills/ --sarif > agentwarden.sarif
 
 - name: Upload SARIF
   uses: github/codeql-action/upload-sarif@v3
@@ -620,7 +640,7 @@ scripts/
   git-install-smoke.mjs git 依赖安装与 prepare 构建验证
 tests/                 单元测试（node:test，免框架）
 fixtures/              安全 / 恶意 / 混淆 / 硬编码密钥样本
-examples/              可直接运行的策略、Skill 与 GitHub Action 示例
+examples/              策略、Skill 与完整 GitHub Action 接入示例
 ```
 
 构建产物为真实编译的 CommonJS-free ESM JavaScript，`dist/cli.js` 直接可执行；源代码使用 Node 原生 TypeScript 支持，测试无需额外运行时。
@@ -768,7 +788,7 @@ Add AgentWarden as a security gate in your CI/CD pipeline:
     fetch-depth: 0
 
 - name: Run AgentWarden Security Gate
-  uses: juangh123/AgentWarden@v0.3.2
+  uses: juangh123/AgentWarden@v0.3.3
   with:
     path: '.'
     config: '.agentwarden/policy.json'
@@ -803,6 +823,7 @@ Action 的 `fail-on` 和 `min-score` 默认留空并使用 `profile`；显式设
 - 使用问题、集成经验和 MCP / Skill 格式反馈：前往 [GitHub Discussions](https://github.com/juangh123/AgentWarden/discussions)。
 - 可复现缺陷和误报：使用 [Issue 模板](https://github.com/juangh123/AgentWarden/issues/new/choose)。
 - 安全漏洞：不要公开提交，按 [SECURITY.md](SECURITY.md) 使用私密安全公告。
+- 社区收录：已收录于 [Awesome Agent Skills Security](https://github.com/LLMSecurity/awesome-agent-skills-security) 的 Tools & Frameworks 分类。
 
 最有价值的反馈是可以复现的真实 workflow，包括安装失败、误报、规则绕过、MCP 配置格式缺口和 CI 接入问题。
 

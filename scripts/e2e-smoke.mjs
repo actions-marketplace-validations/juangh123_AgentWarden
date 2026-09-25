@@ -834,11 +834,38 @@ r = run(['-C', tmp, 'rules', '--json']);
 const rulesJson = JSON.parse(r.stdout);
 check('rules catalog lists security rules', r.status === 0 && rulesJson.count >= 10, `status=${r.status}`);
 
+const help = run(['help']);
+check(
+  'help documents scan and init profile defaults',
+  help.status === 0 && help.stdout.includes('scan default: legacy; init default: balanced'),
+  `status=${help.status}`,
+);
+
 r = run(['-C', tmp, 'rules', '--json', '--severity-override', 'SEC-CRED-001=medium']);
 const overriddenRules = JSON.parse(r.stdout).rules.find((rule) => rule.id === 'SEC-CRED-001');
 check(
   'rules catalog shows effective severity override',
   r.status === 0 && overriddenRules?.severity === 'critical' && overriddenRules?.effectiveSeverity === 'medium',
+  `status=${r.status}`,
+);
+
+const actionIntegrationExample = path.join(root, 'examples', 'github-action-project');
+r = run([
+  '-C',
+  actionIntegrationExample,
+  'scan',
+  '.',
+  '--config',
+  '.agentwarden/policy.json',
+  '--json',
+]);
+const actionIntegrationScan = JSON.parse(r.stdout);
+check(
+  'GitHub Action integration example passes its strict policy',
+  r.status === 0 &&
+    actionIntegrationScan.passed === true &&
+    actionIntegrationScan.score === 100 &&
+    actionIntegrationScan.parsedSkill?.name === 'release-notes-reviewer',
   `status=${r.status}`,
 );
 

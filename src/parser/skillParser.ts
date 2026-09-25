@@ -1,4 +1,41 @@
 import type { ParsedSkill, CodeBlock  } from '../rules/types.ts';
+import {
+  extractMcpServersObject,
+  hasMcpServersContainer,
+  isMcpConfigFilename,
+} from './mcpConfig.ts';
+
+function looksLikeMcpJson(content: string, virtualPath: string): boolean {
+  if (!content.trim().startsWith('{')) return false;
+  if (isMcpConfigFilename(virtualPath)) return true;
+
+  try {
+    return hasMcpServersContainer(JSON.parse(content));
+  } catch {
+    return /"(?:mcpServers|servers|context_servers|mcp|customizations)"\s*:/.test(content);
+  }
+}
+
+function toObjectRecord(value: unknown): Record<string, unknown> | undefined {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
+  return value as Record<string, unknown>;
+}
+
+function toStringRecord(value: unknown): Record<string, string> | undefined {
+  const record = toObjectRecord(value);
+  if (!record) return undefined;
+
+  const output: Record<string, string> = {};
+  for (const [key, child] of Object.entries(record)) {
+    Object.defineProperty(output, key, {
+      value: String(child),
+      enumerable: true,
+      configurable: true,
+      writable: true,
+    });
+  }
+  return output;
+}
 
 function parseMcpJson(raw: string, defaultName: string): ParsedSkill {
   let parsed: any;
@@ -18,10 +55,9 @@ function parseMcpJson(raw: string, defaultName: string): ParsedSkill {
     };
   }
 
-  const serversObj = parsed?.mcpServers || parsed?.servers || parsed?.mcp?.servers || {};
-  const hasServersObject =
-    serversObj !== null && typeof serversObj === 'object' && !Array.isArray(serversObj);
-  const safeServersObj = hasServersObject ? serversObj : {};
+  const serversObj = extractMcpServersObject(parsed);
+  const hasServersObject = serversObj !== undefined;
+  const safeServersObj = serversObj ?? {};
   const mcpServers: ParsedSkill['mcpServers'] = [];
   const codeBlocks: CodeBlock[] = [];
   let lineCounter = 1;
@@ -30,12 +66,20 @@ function parseMcpJson(raw: string, defaultName: string): ParsedSkill {
     const command = typeof srv?.command === 'string' ? srv.command : '';
     const args = Array.isArray(srv?.args) ? srv.args.map((a: any) => String(a)) : [];
     const env = (srv?.env && typeof srv.env === 'object') ? srv.env : {};
+    const type = typeof srv?.type === 'string' ? srv.type : undefined;
+    const url = typeof srv?.url === 'string' ? srv.url : undefined;
+    const headers = toStringRecord(srv?.headers);
+    const oauth = toObjectRecord(srv?.oauth);
 
     mcpServers.push({
       name: serverName,
       command,
       args,
       env,
+      ...(type ? { type } : {}),
+      ...(url ? { url } : {}),
+      ...(headers ? { headers } : {}),
+      ...(oauth ? { oauth } : {}),
     });
 
     const snippet = [
@@ -58,23 +102,20 @@ function parseMcpJson(raw: string, defaultName: string): ParsedSkill {
     description: parsed?.description || `MCP Server configuration defining ${Object.keys(safeServersObj).length} server(s)`,
     version: parsed?.version || '1.0.0',
     frontmatter: {},
-    promptText: JSON.stringify(serversObj, null, 2),
+    promptText: JSON.stringify(safeServersObj, null, 2),
     codeBlocks,
     rawContent: raw,
     kind: 'mcp',
     parseError: hasServersObject
       ? undefined
-      : 'MCP configuration must define an object at "mcpServers", "servers", or "mcp.servers".',
+      : 'MCP configuration must define a server object at a supported location.',
     mcpServers,
   };
 }
 
 export function parseSkillMarkdown(content: string, defaultName: string = 'Unnamed-Skill'): ParsedSkill {
   const trimmed = content.trim();
-  if (
-    trimmed.startsWith('{') &&
-    (trimmed.includes('"mcpServers"') || trimmed.includes('"servers"') || trimmed.includes('"mcp"'))
-  ) {
+  if (looksLikeMcpJson(trimmed, defaultName)) {
     return parseMcpJson(content, defaultName);
   }
 

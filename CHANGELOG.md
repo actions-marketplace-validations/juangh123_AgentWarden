@@ -8,20 +8,43 @@ versioning.
 
 ### Added
 
+- Added a complete downstream GitHub Action integration example and CI smoke
+  coverage that scans it with the same strict policy it uses in its workflow.
+- CI now verifies the integration example through both the local Action source
+  and the published `juangh123/AgentWarden@v0.3.3` tag.
+
+### Changed
+
+- The MVP packaging gate now validates the local publish target against an
+  isolated mock registry, keeping the check repeatable after a version is
+  already published.
+
+## [0.3.3] - 2026-09-24
+
+### Added
+
+- Added `SEC-MCP-004` to flag insecure remote MCP endpoints, and expanded
+  `SEC-MCP-002` to cover hardcoded credentials in remote server headers.
+- Expanded MCP configuration discovery to recognize common Cursor, VS Code,
+  Copilot, Windsurf, Cline, Roo Code, Continue, Zed, Gemini, Qwen, and Dev
+  Container locations, including `mcp.servers`, `context_servers`, and
+  `customizations.vscode.mcp.servers` container shapes, plus Claude Code user
+  and project scopes in `~/.claude.json`.
 - Added `npm run test:mvp` to package the release tarball, write
   `release/SHA256SUMS`, install the artifact into a clean consumer, and verify
   the full user-facing CLI lifecycle through the installed package.
 
 ### Changed
 
+- Hardened MCP parsing and detection against reserved server names, absolute
+  command paths, scoped or tagged packages, malformed discovered configs, and
+  remote transport fields.
+- Made atomic replacement restore the previous file if a Windows replacement
+  fails, corrected supply-chain finding line numbers, and aligned SARIF schema
+  and artifact URI encoding with the specification.
 - CI and the release workflow now enforce the MVP packaging gate. Releases
   publish the exact tarball that passed verification and attach the tarball and
   checksum to the GitHub Release.
-- Published the first npm bootstrap release as `agentwarden-cli@0.3.2` and
-  configured the GitHub Actions Trusted Publisher for subsequent tagged
-  releases.
-- Published the GitHub Action as `AgentWarden Security Gate` on GitHub
-  Marketplace under the `Security` category.
 
 ## [0.3.2] - 2026-09-14
 
@@ -96,7 +119,8 @@ versioning.
 - Publisher policy can require signatures and reject revoked keys.
 - Package publishing excludes the repository `skills.lock`.
 
-[Unreleased]: https://github.com/juangh123/AgentWarden/compare/v0.3.2...HEAD
+[Unreleased]: https://github.com/juangh123/AgentWarden/compare/v0.3.3...HEAD
+[0.3.3]: https://github.com/juangh123/AgentWarden/releases/tag/v0.3.3
 [0.3.2]: https://github.com/juangh123/AgentWarden/releases/tag/v0.3.2
 [0.3.1]: https://github.com/juangh123/AgentWarden/releases/tag/v0.3.1
 [0.3.0]: https://github.com/juangh123/AgentWarden/releases/tag/v0.3.0

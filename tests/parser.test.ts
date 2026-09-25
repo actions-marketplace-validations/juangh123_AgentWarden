@@ -57,4 +57,123 @@ describe('skillParser', () => {
     assert.equal(parsed.mcpServers?.[0].name, 'weather');
     assert.equal(parsed.parseError, undefined);
   });
+
+  it('supports Zed context_servers configurations', () => {
+    const parsed = parseSkillMarkdown(JSON.stringify({
+      context_servers: {
+        local: {
+          command: 'node',
+          args: ['server.js'],
+        },
+      },
+    }), '.zed/settings.json');
+
+    assert.equal(parsed.kind, 'mcp');
+    assert.equal(parsed.mcpServers?.length, 1);
+    assert.equal(parsed.mcpServers?.[0].name, 'local');
+    assert.equal(parsed.parseError, undefined);
+  });
+
+  it('supports VS Code Dev Container MCP configurations', () => {
+    const parsed = parseSkillMarkdown(JSON.stringify({
+      customizations: {
+        vscode: {
+          mcp: {
+            servers: {
+              playwright: {
+                command: 'npx',
+                args: ['-y', '@microsoft/mcp-server-playwright'],
+              },
+            },
+          },
+        },
+      },
+    }), '.devcontainer/devcontainer.json');
+
+    assert.equal(parsed.kind, 'mcp');
+    assert.equal(parsed.mcpServers?.length, 1);
+    assert.equal(parsed.mcpServers?.[0].name, 'playwright');
+    assert.equal(parsed.parseError, undefined);
+  });
+
+  it('supports Claude Code user and project scoped MCP configurations', () => {
+    const parsed = parseSkillMarkdown(JSON.stringify({
+      mcpServers: {
+        shared: {
+          command: 'node',
+          args: ['shared.js'],
+        },
+      },
+      projects: {
+        '/work/project-a': {
+          mcpServers: {
+            projectTool: {
+              command: 'node',
+              args: ['project.js'],
+            },
+          },
+        },
+      },
+    }), '.claude.json');
+
+    assert.equal(parsed.kind, 'mcp');
+    assert.equal(parsed.mcpServers?.length, 2);
+    assert.deepEqual(
+      parsed.mcpServers?.map((server) => server.name).sort(),
+      ['projectTool', 'shared'],
+    );
+    assert.equal(parsed.parseError, undefined);
+  });
+
+  it('preserves remote MCP transport, URL, headers, and OAuth settings', () => {
+    const parsed = parseSkillMarkdown(JSON.stringify({
+      mcpServers: {
+        remote: {
+          type: 'streamable-http',
+          url: 'https://mcp.example.com/mcp',
+          headers: {
+            'X-API-Key': '${MCP_API_KEY}',
+          },
+          oauth: {
+            clientId: 'public-client',
+            scopes: ['tools.read'],
+          },
+        },
+      },
+    }), '.mcp.json');
+
+    assert.deepEqual(parsed.mcpServers, [
+      {
+        name: 'remote',
+        command: '',
+        args: [],
+        env: {},
+        type: 'streamable-http',
+        url: 'https://mcp.example.com/mcp',
+        headers: {
+          'X-API-Key': '${MCP_API_KEY}',
+        },
+        oauth: {
+          clientId: 'public-client',
+          scopes: ['tools.read'],
+        },
+      },
+    ]);
+  });
+
+  it('fails closed when a known MCP config file has no server map', () => {
+    const parsed = parseSkillMarkdown('{}', '.mcp.json');
+
+    assert.equal(parsed.kind, 'mcp');
+    assert.ok(parsed.parseError);
+    assert.equal(parsed.mcpServers?.length, 0);
+  });
+
+  it('treats an invalid declared server map as malformed MCP JSON', () => {
+    const parsed = parseSkillMarkdown('{"servers":[]}', 'settings.json');
+
+    assert.equal(parsed.kind, 'mcp');
+    assert.ok(parsed.parseError);
+    assert.equal(parsed.mcpServers?.length, 0);
+  });
 });
